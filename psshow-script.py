@@ -11,11 +11,17 @@ def main():
     parser.add_argument('-o', '--out', nargs='+',
                         help='highlight out lines for given phases')
     parser.add_argument('-l', '--label', action='store_true',
-                        help='show alrea labels')
+                        help='show area labels')
+    parser.add_argument('-b', '--bulk', action='store_true',
+                        help='show bulk composition on figure')
+    parser.add_argument('--cmap', type=str,
+                        default='Purples', help='name of the colormap')
+    parser.add_argument('--alpha', type=float,
+                        default=0.6, help='alpha of colormap')
     args = parser.parse_args()
-    print('Running psshow...')
     ps = PTPS(args.project)
-    sys.exit(ps.show(out=args.out, label=args.label))
+    sys.exit(ps.show(out=args.out, label=args.label, bulk=args.bulk,
+                     cmap=args.cmap, alpha=args.alpha))
 
 
 if __name__ == "__main__":

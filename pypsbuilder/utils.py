@@ -19,6 +19,9 @@ popen_kw = dict(stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT, universal_newlines=False)
 
 TCenc = 'mac-roman'
+polymorphs = [{'sill', 'and'}, {'ky', 'and'}, {'sill', 'ky'},
+             {'q', 'coe'}, {'diam', 'gph'}, {'dio', 'o'},
+             {'gl', 'act'}, {'gl', 'hb'}, {'act', 'hb'}]
 
 
 class ProjectFile(object):
@@ -134,6 +137,13 @@ class ProjectFile(object):
                 T, p = [], []
         return np.hstack((T1, T, T2)), np.hstack((p1, p, p2))
 
+    def get_bulk_composition(self):
+        for inv in self.invlist:
+            if not inv[2]['manual']:
+                break
+        bc = inv[2]['output'].split('composition (from script)\n')[1].split('\n')
+        return bc[0].split(), bc[1].split()
+
     def construct_areas(self):
         def area_exists(indexes):
             def dfs_visit(graph, u, found_cycle, pred_node, marked, path):
@@ -199,7 +209,7 @@ class ProjectFile(object):
             else:
                 faces[f2] = [ix]
             # topology of polymorphs is degenerated
-            for poly in [{'sill', 'and'}, {'ky', 'and'}, {'sill', 'ky'}, {'q', 'coe'}, {'diam', 'gph'}]:
+            for poly in polymorphs:
                 if poly.issubset(uni[4]['phases']):
                     f2 = frozenset(uni[4]['phases'] - poly.difference(uni[4]['out']))
                     if f2 in faces:
@@ -299,11 +309,19 @@ class ProjectFile(object):
             if invalid:
                 bad_shapes[f] = e
         # Fix possible overlaps of partial areas
+        todel = set()
         for k1, k2 in itertools.combinations(shapes, 2):
             if shapes[k1].within(shapes[k2]):
                 shapes[k2] = shapes[k2].difference(shapes[k1])
+                if shapes[k2].is_empty:
+                    todel.add(k2)
             if shapes[k2].within(shapes[k1]):
                 shapes[k1] = shapes[k1].difference(shapes[k2])
+                if shapes[k1].is_empty:
+                    todel.add(k1)
+        # remove degenerated polygons
+        for k in todel:
+            shapes.pop(k)
         return shapes, shape_edges, bad_shapes
 
 
